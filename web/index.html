@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="token" content="__TOKEN__">
+  <title>Minerador IA</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23f7931a'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E%E2%82%BF%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">₿</span>
+    <div>
+      <strong>Minerador IA</strong>
+      <small>mineração solo com palpites de inteligência artificial</small>
+    </div>
+  </div>
+  <div class="top-status">
+    <span id="modeChip" class="chip">—</span>
+    <span id="connPill" class="pill off"><i></i><span>Desconectado</span></span>
+    <button id="btnConnect" class="btn primary">Conectar</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="painel" class="active">Painel</button>
+  <button data-tab="carteira">Carteira &amp; Rede</button>
+  <button data-tab="ia">Inteligência Artificial</button>
+  <button data-tab="bloco">Bloco atual</button>
+  <button data-tab="manual">Validação manual</button>
+  <button data-tab="encontrados">Blocos enviados</button>
+  <button data-tab="registro">Registro</button>
+</nav>
+
+<main>
+<!-- ============================ PAINEL ============================ -->
+<section id="tab-painel" class="tab active">
+  <div class="tiles">
+    <div class="tile"><span>Altura do bloco candidato</span><b id="tHeight">—</b><em id="tHeightSub">aguardando conexão</em></div>
+    <div class="tile"><span>Dificuldade da rede</span><b id="tDiff">—</b><em id="tDiffSub">&nbsp;</em></div>
+    <div class="tile"><span>Palpites testados pela IA</span><b id="tGuesses">0</b><em id="tGuessesSub">&nbsp;</em></div>
+    <div class="tile"><span>Melhor palpite</span><b id="tBest">—</b><em id="tBestSub">zeros no início do hash</em></div>
+    <div class="tile tokens"><span>Tokens gastos com a IA</span><b id="tTokens">0</b><em id="tTokensSub">nenhuma chamada ainda</em><em id="tTokensSub2"></em></div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><h2>Inteligência artificial</h2><span id="aiBadge" class="badge">parada</span></div>
+      <p class="muted" id="aiModelLine">—</p>
+      <div class="ai-controls">
+        <button id="btnAiStart" class="btn primary">Iniciar palpites da IA</button>
+        <button id="btnAiStop" class="btn">Parar</button>
+      </div>
+      <dl class="kv">
+        <dt>Chamadas</dt><dd id="aiCalls">0</dd>
+        <dt>Tokens nesta sessão</dt><dd id="aiTokens">0</dd>
+        <dt>Custo nesta sessão</dt><dd id="aiCost">—</dd>
+        <dt>Tempo por chamada</dt><dd id="aiLatency">—</dd>
+      </dl>
+      <div class="thought">
+        <span>Nonce anterior enviado</span><p id="aiPrev" class="mono">—</p>
+        <span>Resposta da IA (só o nonce)</span><p id="aiAnswer" class="mono answer">—</p>
+      </div>
+      <p class="error" id="aiError" hidden></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Sua chance, sem ilusão</h2></div>
+      <div class="odds">
+        <div><span>Chance por palpite</span><b id="oddsEach">—</b></div>
+        <div><span>Palpites necessários (média)</span><b id="oddsNeeded">—</b></div>
+        <div><span>Tempo médio no ritmo atual da IA</span><b id="oddsTime">—</b></div>
+      </div>
+      <div class="zeros-meter">
+        <div class="zm-label"><span>Zeros no início do hash</span><span id="zmText">—</span></div>
+        <div class="zm-track"><div id="zmBest" class="zm-fill"></div><div id="zmNeed" class="zm-need"></div></div>
+        <div class="zm-legend"><span><i class="sw best"></i>melhor palpite</span><span><i class="sw need"></i>necessário para o bloco</span></div>
+      </div>
+      <p class="muted small">O SHA-256 não tem padrão: nenhum palpite (da IA ou de qualquer método) é melhor que o acaso. O painel mostra os números reais para você acompanhar com os pés no chão.</p>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><h2>Bloco candidato</h2><button class="btn ghost small" data-goto="bloco">ver detalhes →</button></div>
+      <dl class="kv" id="blockKv">
+        <dt>Recompensa</dt><dd id="bReward">—</dd>
+        <dt>Transações</dt><dd id="bTxs">—</dd>
+        <dt>Paga para</dt><dd id="bPayout" class="mono break">—</dd>
+        <dt>Bloco anterior</dt><dd id="bPrev" class="mono break">—</dd>
+        <dt>Alvo</dt><dd id="bTarget" class="mono break">—</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Últimos palpites testados</h2></div>
+      <ul class="hash-stream" id="hashStream"><li class="muted">Nenhum palpite ainda.</li></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Registro recente</h2><button class="btn ghost small" data-goto="registro">ver tudo →</button></div>
+    <ul class="log" id="logMini"></ul>
+  </div>
+</section>
+
+<!-- ======================= CARTEIRA & REDE ======================= -->
+<section id="tab-carteira" class="tab">
+  <div class="card">
+    <div class="card-head"><h2>Sua carteira</h2></div>
+    <p class="muted">Só é preciso o <b>endereço público</b> onde a recompensa vai cair. Nunca digite aqui sua frase de recuperação (seed) nem chave privada: o minerador não precisa delas.</p>
+    <label class="field">
+      <span>Endereço Bitcoin para receber a recompensa</span>
+      <input id="inAddress" class="mono" placeholder="bc1q… , bc1p… , 1… ou 3…" autocomplete="off" spellcheck="false">
+    </label>
+    <p id="addrInfo" class="addr-info muted">&nbsp;</p>
+    <button id="btnSaveAddress" class="btn primary">Salvar endereço</button>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Como minerar</h2></div>
+    <div class="modes" id="modes">
+      <label class="mode">
+        <input type="radio" name="modo" value="publico">
+        <div>
+          <b>Mainnet solo, sem nó <span class="tag">recomendado</span></b>
+          <p>O bloco é montado com dados públicos da rede (mempool.space). Se a IA acertar, o bloco é transmitido direto para os nós do Bitcoin pelo protocolo P2P. Nada de pool, nada de nó, nada de mineração pesada no PC.</p>
+        </div>
+      </label>
+      <label class="mode">
+        <input type="radio" name="modo" value="no">
+        <div>
+          <b>Mainnet com nó próprio</b>
+          <p>Se um dia você rodar o Bitcoin Core completo, o minerador usa as transações da sua própria mempool e envia o bloco pelo seu nó.</p>
+        </div>
+      </label>
+      <label class="mode">
+        <input type="radio" name="modo" value="regtest">
+        <div>
+          <b>Regtest (teste local)</b>
+          <p>Blockchain de teste só no seu PC, com as mesmas regras da real e dificuldade mínima. Aqui a IA acerta de verdade e você vê o bloco sendo aceito e a recompensa caindo na carteira de teste.</p>
+        </div>
+      </label>
+    </div>
+
+    <div class="options">
+      <label class="switch"><input type="checkbox" id="inIncludeTxs"><span></span>Incluir transações da mempool no bloco (ganha as taxas)</label>
+      <label class="field inline"><span>Máximo de transações</span><input id="inMaxTxs" type="number" min="0" max="500"></label>
+      <label class="switch"><input type="checkbox" id="inAutoSend"><span></span>Transmitir o bloco automaticamente quando um nonce válido for encontrado</label>
+    </div>
+
+    <div id="nodeBox" class="subbox" hidden>
+      <h3>Conexão com o seu Bitcoin Core</h3>
+      <div class="row">
+        <label class="field"><span>Host</span><input id="inNodeHost"></label>
+        <label class="field"><span>Porta RPC</span><input id="inNodePort" type="number"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Usuário RPC</span><input id="inNodeUser" autocomplete="off"></label>
+        <label class="field"><span>Senha RPC</span><input id="inNodePass" type="password" autocomplete="off"></label>
+      </div>
+      <label class="field"><span>…ou caminho do arquivo .cookie (opcional)</span><input id="inNodeCookie" placeholder="C:\Users\voce\AppData\Roaming\Bitcoin\.cookie"></label>
+    </div>
+
+    <div class="actions">
+      <button id="btnSaveMode" class="btn">Salvar opções</button>
+      <button id="btnConnect2" class="btn primary">Salvar e conectar</button>
+      <button id="btnP2PTest" class="btn ghost">Testar conexão com a rede Bitcoin</button>
+    </div>
+    <div id="p2pResult" class="p2p-result" hidden></div>
+  </div>
+
+  <div id="regtestBox" class="card" hidden>
+    <div class="card-head"><h2>Laboratório regtest</h2><span id="rtBadge" class="badge">—</span></div>
+    <p class="muted">Roteiro: <b>1.</b> baixar o Bitcoin Core portátil → <b>2.</b> conectar no modo Regtest → <b>3.</b> preparar 101 blocos (as recompensas só podem ser gastas depois de 100 confirmações) → <b>4.</b> criar transações de teste → <b>5.</b> iniciar os palpites da IA e ver o bloco com as transações ser aceito.</p>
+    <div class="rt-grid">
+      <div><span>Bitcoin Core</span><b id="rtCore">—</b></div>
+      <div><span>Altura</span><b id="rtHeight">—</b></div>
+      <div><span>Transações na mempool</span><b id="rtMempool">—</b></div>
+      <div><span>Saldo disponível</span><b id="rtBalance">—</b></div>
+      <div><span>Saldo imaturo</span><b id="rtImmature">—</b></div>
+      <div><span>Carteira de teste</span><b id="rtAddress" class="mono small break">—</b></div>
+    </div>
+    <div class="actions">
+      <button id="btnRtDownload" class="btn">Baixar Bitcoin Core</button>
+      <button id="btnRtPrepare" class="btn">Preparar 101 blocos</button>
+      <button id="btnRtTxs" class="btn">Criar 5 transações de teste</button>
+      <button id="btnRtStop" class="btn ghost">Desligar nó</button>
+      <button id="btnRtReset" class="btn ghost danger">Apagar blockchain de teste</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== IA ============================== -->
+<section id="tab-ia" class="tab">
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><h2>Conexão com a IA</h2></div>
+      <label class="field"><span>Provedor</span><select id="inProvider"></select></label>
+      <label class="field"><span>Chave da API</span><input id="inApiKey" type="password" autocomplete="off" placeholder="cole a chave aqui"></label>
+      <label class="field" id="baseUrlField" hidden><span>URL base da API compatível</span><input id="inBaseUrl" placeholder="https://…/v1"></label>
+      <div class="field">
+        <span>Modelo</span>
+        <div class="row tight">
+          <input id="inModel" list="modelList" autocomplete="off">
+          <datalist id="modelList"></datalist>
+          <button id="btnListModels" class="btn">Listar modelos</button>
+        </div>
+      </div>
+      <div class="row">
+        <label class="field"><span>Intervalo entre chamadas (s)</span><input id="inInterval" type="number" min="0"></label>
+        <label class="field"><span>Limite de chamadas</span><input id="inMaxCalls" type="number" min="1"></label>
+      </div>
+      <p class="muted small">Cada chamada envia o cabeçalho, o alvo e o nonce anterior, e pede para a IA calcular o próximo nonce, levando o tempo que precisar e respondendo só com o número. Modelos com raciocínio pensam mais e custam mais por chamada. O limite de chamadas protege seu saldo na API.</p>
+      <div class="actions">
+        <button id="btnSaveAi" class="btn">Salvar</button>
+        <button id="btnAiStart2" class="btn primary">Iniciar palpites</button>
+        <button id="btnAiStop2" class="btn">Parar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>IA × acaso</h2><span class="muted small">1 nonce aleatório para cada nonce da IA</span></div>
+      <div class="viz-root" id="vizRoot">
+        <div class="legend"><span><i class="sw s1"></i>Palpites da IA</span><span><i class="sw s2"></i>Nonces aleatórios</span></div>
+        <div class="chart" id="chart" role="img" aria-label="Distribuição de zeros iniciais: IA contra aleatório"></div>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+      <table class="cmp">
+        <thead><tr><th></th><th>IA</th><th>Aleatório</th></tr></thead>
+        <tbody>
+          <tr><td>Palpites testados</td><td id="cmpTotAi">0</td><td id="cmpTotRnd">0</td></tr>
+          <tr><td>Média de zeros no início</td><td id="cmpAvgAi">—</td><td id="cmpAvgRnd">—</td></tr>
+          <tr><td>Melhor resultado (zeros)</td><td id="cmpBestAi">—</td><td id="cmpBestRnd">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><h2>Copiloto</h2><button id="btnChatClear" class="btn ghost small">limpar conversa</button></div>
+      <div class="chat" id="chat"><p class="muted">Pergunte qualquer coisa sobre o bloco, a mineração ou suas chances.</p></div>
+      <div class="chat-quick">
+        <button class="btn ghost small" data-ask="Explique o bloco candidato atual em linguagem simples.">Explicar o bloco atual</button>
+        <button class="btn ghost small" data-ask="Qual é a minha chance real de achar um bloco? Faça as contas.">Qual minha chance?</button>
+        <button class="btn ghost small" data-ask="Analise os seus palpites até agora comparados com os aleatórios.">Analisar palpites</button>
+      </div>
+      <form id="chatForm" class="chat-form">
+        <input id="chatInput" placeholder="Escreva para a IA…" autocomplete="off">
+        <button class="btn primary" id="btnChatSend">Enviar</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Palpites da IA</h2></div>
+      <div class="table-wrap">
+        <table class="data" id="guessTable">
+          <thead><tr><th>Nonce</th><th>Hash resultante</th><th>Zeros</th><th></th></tr></thead>
+          <tbody><tr><td colspan="4" class="muted">Nenhum palpite ainda.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== BLOCO =========================== -->
+<section id="tab-bloco" class="tab">
+  <div class="card">
+    <div class="card-head"><h2>Cabeçalho do bloco candidato</h2><span class="muted small" id="blkUpdated"></span></div>
+    <dl class="kv wide" id="hdrKv"><dt>Status</dt><dd>Conecte-se para montar um bloco candidato.</dd></dl>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Transação coinbase (a que paga você)</h2></div>
+    <table class="data" id="outTable"><thead><tr><th>Saída</th><th>Destino</th><th>Valor</th></tr></thead><tbody></tbody></table>
+    <label class="field"><span>Coinbase serializada (sem o witness)</span><textarea id="coinbaseHex" class="mono" rows="3" readonly></textarea></label>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Transações incluídas</h2><span class="muted small" id="txSummary"></span></div>
+    <div class="table-wrap">
+      <table class="data" id="txTable"><thead><tr><th>#</th><th>TXID</th><th>Taxa</th><th>Peso</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== MANUAL =========================== -->
+<section id="tab-manual" class="tab">
+  <div class="card">
+    <div class="card-head"><h2>Testar um nonce no bloco candidato</h2></div>
+    <p class="muted">Digite um número (nonce). O minerador monta o cabeçalho com ele, calcula o SHA-256 duplo e compara com o alvo. Se o hash ficar abaixo do alvo, o botão <b>Emitir bloco</b> é liberado para transmitir o bloco e receber a recompensa.</p>
+    <div class="row">
+      <label class="field grow"><span>Nonce (0 a 4.294.967.295, ou hexadecimal com 0x)</span><input id="inNonce" class="mono" placeholder="ex.: 2083236893"></label>
+    </div>
+    <details class="adv">
+      <summary>Campos avançados</summary>
+      <div class="row">
+        <label class="field"><span>Extranonce (16 dígitos hex, opcional)</span><input id="inExtranonce" class="mono" placeholder="0000000000000000"></label>
+        <label class="field"><span>Horário Unix (opcional)</span><input id="inNtime" class="mono" type="number"></label>
+      </div>
+    </details>
+    <div class="actions">
+      <button id="btnTestNonce" class="btn primary">Testar nonce</button>
+      <button id="btnRandomNonce" class="btn ghost">Sortear um nonce</button>
+      <button id="btnEmit" class="btn gold" disabled>Emitir bloco</button>
+    </div>
+    <div id="manualResult" class="result" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Verificar um bloco real da blockchain</h2></div>
+    <p class="muted">Veja como um bloco de verdade foi validado: o minerador baixa o cabeçalho, recalcula o hash e confere com o oficial. Depois, mude o nonce e veja que qualquer alteração invalida o bloco.</p>
+    <div class="row tight">
+      <input id="inRealHeight" type="number" placeholder="altura, ex.: 840000" min="0">
+      <button id="btnVerifyReal" class="btn primary">Verificar</button>
+    </div>
+    <div id="realResult" class="result" hidden></div>
+  </div>
+</section>
+
+<!-- ========================= ENCONTRADOS ========================= -->
+<section id="tab-encontrados" class="tab">
+  <div class="card">
+    <div class="card-head"><h2>Blocos enviados</h2></div>
+    <p class="muted">Todo bloco com nonce válido fica salvo com o conteúdo completo em <span class="mono">data/blocos_encontrados.json</span>, mesmo se o envio falhar.</p>
+    <div class="table-wrap">
+      <table class="data" id="foundTable">
+        <thead><tr><th>Quando</th><th>Rede</th><th>Altura</th><th>Achado por</th><th>Hash</th><th>Recompensa</th><th>Resultado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== REGISTRO =========================== -->
+<section id="tab-registro" class="tab">
+  <div class="card">
+    <div class="card-head"><h2>Registro de eventos</h2></div>
+    <ul class="log" id="logFull"></ul>
+  </div>
+</section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

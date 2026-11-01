@@ -1,0 +1,23 @@
+# Dados locais: chaves de API, endereço, gastos, blocos enviados e blockchain de teste
+data/
+.env
+.env.*
+
+# Ambiente Python e arquivos gerados
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Bitcoin Core portátil: o programa baixa e confere pelo botão "Baixar Bitcoin Core"
+bitcoin-core/
+
+# Configurações pessoais e testes de skills do Claude Code
+.claude/settings.local.json
+*-workspace/
+
+# Sistema
+Thumbs.db
+Desktop.ini
+.DS_Store
