@@ -33,6 +33,28 @@ Deixe a janela preta aberta enquanto usa o programa. Fechar a janela encerra o s
 
 **Passo 6: inicie os palpites.** Clique em **Iniciar palpites**. A partir daqui, as chamadas são cobradas. Acompanhe os tokens no **Painel** e clique em **Parar** quando quiser encerrar.
 
+### Linux / Docker (Ollama local, sem fatura de API)
+
+O Compose sobe o painel e um Ollama com `llama3.2:1b`. O endereço da recompensa entra só pelo `.env` (não commite esse arquivo).
+
+```bash
+cp .env.example .env
+# Edite MINERADOR_ENDERECO com o endereço público (bc1… / 1… / 3…).
+# Nunca cole a seed nem a chave privada.
+
+docker compose up -d --build
+```
+
+Interface: http://127.0.0.1:8765
+
+O primeiro `up` baixa a imagem do Ollama e o modelo (~1–2 GB). Na aba **Inteligência Artificial** o provedor já aponta para `http://ollama:11434/v1`. Clique **Iniciar palpites**.
+
+Para encerrar:
+
+```bash
+docker compose down
+```
+
 ## 3. Teste sem gastar nada
 
 O modo regtest cria uma blockchain privada no seu PC, com as regras do Bitcoin e dificuldade mínima. As moedas dela não têm valor.

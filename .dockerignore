@@ -1,0 +1,14 @@
+.git
+data
+.venv
+venv
+bitcoin-core
+tests
+.claude
+__pycache__
+*.pyc
+iniciar.bat
+DOCUMENTACAO.md
+.env
+.env.*
+!.env.example

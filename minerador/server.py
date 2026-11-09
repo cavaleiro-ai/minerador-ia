@@ -6,6 +6,7 @@ nenhum site aberto no navegador consiga mexer no minerador.
 """
 from __future__ import annotations
 
+import os
 import secrets
 import threading
 from contextlib import asynccontextmanager
@@ -23,14 +24,30 @@ from .rpc import RPCError
 
 TOKEN = secrets.token_urlsafe(24)
 ALLOWED_HOSTS = {"127.0.0.1", "localhost"}
+ALLOWED_HOSTS.update(
+    h.strip() for h in os.environ.get("MINERADOR_ALLOWED_HOSTS", "").split(",") if h.strip()
+)
 
 ctrl = Controller()
 
 
 @asynccontextmanager
 async def lifespan(_app):
+    if os.environ.get("MINERADOR_AUTO_CONECTAR") == "1":
+        threading.Thread(target=_auto_connect, daemon=True).start()
     yield
     ctrl.shutdown()
+
+
+def _auto_connect() -> None:
+    if not (ctrl.config.get("endereco") or "").strip():
+        ctrl.log("Sem endereço de recompensa. Defina MINERADOR_ENDERECO no .env "
+                 "ou cadastre na aba Carteira & Rede.")
+        return
+    try:
+        ctrl.connect()
+    except Exception as exc:
+        ctrl.log(f"Auto-conectar falhou: {exc}", "erro")
 
 
 app = FastAPI(title="Minerador IA", docs_url=None, redoc_url=None, openapi_url=None,
