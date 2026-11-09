@@ -1,0 +1,54 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: minerador-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 10s
+      retries: 24
+      start_period: 15s
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: minerador-ollama-pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama"]
+    command: ["pull", "llama3.2:1b"]
+    restart: "no"
+
+  minerador:
+    build: .
+    container_name: minerador-ia
+    ports:
+      - "8765:8765"
+    environment:
+      MINERADOR_HOST: "0.0.0.0"
+      MINERADOR_PORTA: "8765"
+      MINERADOR_SEM_NAVEGADOR: "1"
+      MINERADOR_AUTO_CONECTAR: "1"
+      MINERADOR_ENDERECO: ${MINERADOR_ENDERECO:-}
+      MINERADOR_IA_PROVEDOR: ${MINERADOR_IA_PROVEDOR:-compat}
+      MINERADOR_IA_MODELO: ${MINERADOR_IA_MODELO:-llama3.2:1b}
+      MINERADOR_IA_BASE_URL: ${MINERADOR_IA_BASE_URL:-http://ollama:11434/v1}
+      MINERADOR_IA_CHAVE: ${MINERADOR_IA_CHAVE:-ollama}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

@@ -4,6 +4,7 @@ from __future__ import annotations
 import collections
 import copy
 import json
+import os
 import random
 import threading
 import time
@@ -52,6 +53,26 @@ def mask(secret: str) -> str:
     return f"{secret[:6]}…{secret[-4:]}" if len(secret) > 12 else ("•" * len(secret))
 
 
+def _apply_env_overrides(cfg: dict) -> dict:
+    """Endereço e IA via ambiente (.env / Compose). Não grava seed nem chave privada."""
+    addr = os.environ.get("MINERADOR_ENDERECO", "").strip()
+    if addr:
+        cfg["endereco"] = addr
+    provedor = os.environ.get("MINERADOR_IA_PROVEDOR", "").strip()
+    if provedor in PROVIDERS:
+        cfg["ia"]["provedor"] = provedor
+    modelo = os.environ.get("MINERADOR_IA_MODELO", "").strip()
+    if modelo:
+        cfg["ia"]["modelos"][cfg["ia"]["provedor"]] = modelo
+    base = os.environ.get("MINERADOR_IA_BASE_URL", "").strip()
+    if base:
+        cfg["ia"]["base_url_compat"] = base
+    chave = os.environ.get("MINERADOR_IA_CHAVE", "").strip()
+    if chave:
+        cfg["ia"]["chaves"][cfg["ia"]["provedor"]] = chave
+    return cfg
+
+
 class Controller:
     def __init__(self):
         self.lock = threading.RLock()
@@ -77,10 +98,10 @@ class Controller:
     def _load_config(self) -> dict:
         try:
             cfg = _merge(DEFAULT_CONFIG, json.loads(CONFIG_FILE.read_text(encoding="utf-8")))
+            cfg["ia"].pop("palpites_por_chamada", None)     # opção antiga (vários nonces por chamada)
         except (FileNotFoundError, json.JSONDecodeError):
-            return copy.deepcopy(DEFAULT_CONFIG)
-        cfg["ia"].pop("palpites_por_chamada", None)     # opção antiga (vários nonces por chamada)
-        return cfg
+            cfg = copy.deepcopy(DEFAULT_CONFIG)
+        return _apply_env_overrides(cfg)
 
     def _save_config(self) -> None:
         CONFIG_FILE.write_text(json.dumps(self.config, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -2,6 +2,7 @@
 data/
 .env
 .env.*
+!.env.example
 
 # Ambiente Python e arquivos gerados
 .venv/
